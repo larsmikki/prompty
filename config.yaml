@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  promptly:
+    container_name: promptly
+    image: larsmikki/promptly:latest
+    ports:
+      - "3060:3060"
+    volumes:
+      - promptly_data:/app/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3060/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  promptly_data:
