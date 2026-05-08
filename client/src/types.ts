@@ -4,6 +4,7 @@ export interface Prompt {
   text: string
   category: string
   createdAt: number
+  imagePath?: string
 }
 
 export interface Category {

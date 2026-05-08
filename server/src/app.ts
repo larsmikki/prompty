@@ -4,9 +4,12 @@ import compression from 'compression';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { config } from './config.js';
 import promptsRouter from './routes/prompts.js';
 import categoriesRouter from './routes/categories.js';
 import importRouter from './routes/import.js';
+import settingsRouter from './routes/settings.js';
+import refineRouter from './routes/refine.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,10 +28,15 @@ export function createApp() {
     res.json({ status: 'ok' });
   });
 
+  // Serve uploaded images
+  app.use('/images', express.static(path.join(config.dataDir, 'images')));
+
   // API routes
   app.use('/api/prompts', promptsRouter);
   app.use('/api/categories', categoriesRouter);
   app.use('/api/import', importRouter);
+  app.use('/api/settings', settingsRouter);
+  app.use('/api/refine', refineRouter);
 
   // In production, serve the client build
   if (isProduction) {

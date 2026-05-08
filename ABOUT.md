@@ -28,7 +28,7 @@ There are no automated tests.
 
 ## Architecture
 
-Promptly is a self-hosted AI prompt manager — a monorepo with a React frontend and Express backend sharing a single SQLite database.
+Prompty is a self-hosted AI prompt manager — a monorepo with a React frontend and Express backend sharing a single SQLite database.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -69,7 +69,7 @@ Promptly is a self-hosted AI prompt manager — a monorepo with a React frontend
 └───────────────────────────────────┼─────────────────────────────┘
                                     │
                     ┌───────────────▼──────────────┐
-                    │   data/promptly.db  (file)   │
+                    │   data/prompty.db  (file)   │
                     │                              │
                     │  categories (id, name)       │
                     │  prompts (id, title, text,   │

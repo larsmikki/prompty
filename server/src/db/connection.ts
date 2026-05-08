@@ -1,3 +1,4 @@
+// @ts-ignore
 import initSqlJs, { Database } from 'sql.js';
 import fs from 'fs';
 import path from 'path';
@@ -5,7 +6,7 @@ import { config } from '../config.js';
 
 let db: Database;
 
-const dbPath = path.join(config.dataDir, 'promptly.db');
+const dbPath = path.join(config.dataDir, 'prompty.db');
 
 export async function initDb(): Promise<Database> {
   if (db) return db;

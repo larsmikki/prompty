@@ -31,3 +31,4 @@ dist-ssr
 
 # Database / runtime data
 data/
+.gstack/

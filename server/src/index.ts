@@ -10,7 +10,7 @@ async function main() {
 
   const app = createApp();
   app.listen(config.port, () => {
-    console.log(`Promptly server running on http://localhost:${config.port}`);
+    console.log(`Prompty server running on http://localhost:${config.port}`);
   });
 }
 

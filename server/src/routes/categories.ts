@@ -8,7 +8,7 @@ router.get('/', (_req, res) => {
   const results = db.exec('SELECT id, name FROM categories ORDER BY name');
   if (!results.length) return res.json([]);
 
-  const categories = results[0].values.map(row => ({
+  const categories = results[0].values.map((row: any[]) => ({
     id: row[0],
     name: row[1],
   }));

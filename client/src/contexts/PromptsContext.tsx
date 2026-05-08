@@ -1,17 +1,19 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import type { Prompt, Category } from '../types'
-import { api } from '../api'
+import type { Prompt, Category } from '@/types'
+import { api } from '@/api'
 
 interface PromptsContextType {
   prompts: Prompt[]
   categories: Category[]
   loading: boolean
-  addPrompt: (title: string, text: string, category: string) => void
+  addPrompt: (title: string, text: string, category: string) => Promise<Prompt | undefined>
   deletePrompt: (id: string) => void
   editPrompt: (id: string, title: string, text: string, category: string) => void
-  addCategory: (name: string) => void
+  addCategory: (name: string) => Promise<Category | undefined>
   deleteCategory: (id: string) => void
   renameCategory: (id: string, name: string) => void
+  setPromptImage: (id: string, file: File) => Promise<void>
+  removePromptImage: (id: string) => Promise<void>
   refresh: () => Promise<void>
 }
 
@@ -30,12 +32,12 @@ export function PromptsProvider({ children }: { children: ReactNode }) {
 
       // One-time migration: if server is empty but localStorage has data, push it
       if (p.length === 0 && c.length <= 1) {
-        const localPrompts = JSON.parse(localStorage.getItem('promptly-prompts') || '[]')
-        const localCategories = JSON.parse(localStorage.getItem('promptly-categories') || '[]')
+        const localPrompts = JSON.parse(localStorage.getItem('prompty-prompts') || '[]')
+        const localCategories = JSON.parse(localStorage.getItem('prompty-categories') || '[]')
         if (localPrompts.length > 0 || localCategories.length > 0) {
           await api.importData({ prompts: localPrompts, categories: localCategories })
-          localStorage.removeItem('promptly-prompts')
-          localStorage.removeItem('promptly-categories')
+          localStorage.removeItem('prompty-prompts')
+          localStorage.removeItem('prompty-categories')
           const [p2, c2] = await Promise.all([api.getPrompts(), api.getCategories()])
           setPrompts(p2)
           setCategories(c2)
@@ -50,12 +52,14 @@ export function PromptsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  const addPrompt = useCallback(async (title: string, text: string, category: string) => {
+  const addPrompt = useCallback(async (title: string, text: string, category: string): Promise<Prompt | undefined> => {
     try {
       const newPrompt = await api.createPrompt({ title, text, category })
       setPrompts(prev => [newPrompt, ...prev])
+      return newPrompt
     } catch (err) {
       console.error('Failed to add prompt:', err)
+      return undefined
     }
   }, [])
 
@@ -77,12 +81,14 @@ export function PromptsProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const addCategory = useCallback(async (name: string) => {
+  const addCategory = useCallback(async (name: string): Promise<Category | undefined> => {
     try {
       const newCat = await api.createCategory(name)
-      setCategories(prev => [...prev, newCat])
+      setCategories(prev => [...prev, newCat].sort((a, b) => a.name.localeCompare(b.name)))
+      return newCat
     } catch (err) {
       console.error('Failed to add category:', err)
+      return undefined
     }
   }, [])
 
@@ -107,8 +113,27 @@ export function PromptsProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const setPromptImage = useCallback(async (id: string, file: File) => {
+    try {
+      const buffer = await file.arrayBuffer()
+      await api.uploadImage(id, buffer)
+      setPrompts(prev => prev.map(p => p.id === id ? { ...p, imagePath: `/images/${id}.png` } : p))
+    } catch (err) {
+      console.error('Failed to upload image:', err)
+    }
+  }, [])
+
+  const removePromptImage = useCallback(async (id: string) => {
+    try {
+      await api.deleteImage(id)
+      setPrompts(prev => prev.map(p => p.id === id ? { ...p, imagePath: undefined } : p))
+    } catch (err) {
+      console.error('Failed to remove image:', err)
+    }
+  }, [])
+
   return (
-    <PromptsContext.Provider value={{ prompts, categories, loading, addPrompt, deletePrompt, editPrompt, addCategory, deleteCategory, renameCategory, refresh: fetchAll }}>
+    <PromptsContext.Provider value={{ prompts, categories, loading, addPrompt, deletePrompt, editPrompt, addCategory, deleteCategory, renameCategory, setPromptImage, removePromptImage, refresh: fetchAll }}>
       {children}
     </PromptsContext.Provider>
   )

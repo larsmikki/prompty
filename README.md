@@ -1,6 +1,6 @@
-# Promptly
+# Prompty
 
-![Screenshot](screenshot.png)
+![Screenshot](resources/screenshot.png)
 
 A self-hosted prompt library for managing and organizing your AI prompts. Store, search, and discover prompts across categories — all synced server-side so your library is available everywhere.
 
@@ -8,11 +8,11 @@ A self-hosted prompt library for managing and organizing your AI prompts. Store,
 
 ```bash
 docker run -d \
-  --name promptly \
+  --name prompty \
   -p 3060:3060 \
-  -v promptly_data:/app/data \
+  -v prompty_data:/app/data \
   --restart unless-stopped \
-  larsmikki/promptly:latest
+  larsmikki/prompty:latest
 ```
 
 Then open [http://localhost:3060](http://localhost:3060).
@@ -25,13 +25,13 @@ Save as `docker-compose.yml` (or use the included `config.yaml`):
 version: "3.8"
 
 services:
-  promptly:
-    container_name: promptly
-    image: larsmikki/promptly:latest
+  prompty:
+    container_name: prompty
+    image: larsmikki/prompty:latest
     ports:
       - "3060:3060"
     volumes:
-      - promptly_data:/app/data
+      - prompty_data:/app/data
     deploy:
       replicas: 1
       restart_policy:
@@ -46,7 +46,7 @@ services:
       start_period: 10s
 
 volumes:
-  promptly_data:
+  prompty_data:
 ```
 
 ```bash
@@ -85,5 +85,5 @@ npm run dev
 To build the production image locally:
 
 ```bash
-docker build -t promptly .
+docker build -t prompty .
 ```

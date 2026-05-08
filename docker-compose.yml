@@ -1,0 +1,17 @@
+services:
+  prompty:
+    image: larsmikki/prompty:latest
+    container_name: prompty
+    ports:
+      - "3060:3060"
+    volumes:
+      - prompty-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3060"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+
+volumes:
+  prompty-data:
