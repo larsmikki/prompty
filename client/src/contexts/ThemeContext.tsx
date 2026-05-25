@@ -24,9 +24,35 @@ export const THEMES: ThemeDefinition[] = [
     border: 'rgba(0,0,0,0.09)',
     text: '#09090b',
     text2: '#71717a',
-    accent: '#8b5cf6',
-    gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-    previewColors: ['#e8eaed', '#d1d5db', '#8b5cf6'],
+    accent: '#7c3aed',
+    gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+    previewColors: ['#e8eaed', '#d1d5db', '#7c3aed'],
+  },
+  {
+    name: 'Dark',
+    mode: 'dark',
+    bg: '#0a0a0f',
+    surface: '#111118',
+    surface2: '#1a1a28',
+    border: 'rgba(124,58,237,0.18)',
+    text: '#f0f0ff',
+    text2: '#8884a8',
+    accent: '#7c3aed',
+    gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+    previewColors: ['#1a1a28', '#2d2845', '#7c3aed'],
+  },
+  {
+    name: 'Midnight',
+    mode: 'dark',
+    bg: '#050814',
+    surface: '#0d1117',
+    surface2: '#161b22',
+    border: 'rgba(6,182,212,0.15)',
+    text: '#e2f8ff',
+    text2: '#7d8ea0',
+    accent: '#06b6d4',
+    gradient: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)',
+    previewColors: ['#161b22', '#0d2a35', '#06b6d4'],
   },
   {
     name: 'Rainbow',
@@ -119,32 +145,6 @@ export const THEMES: ThemeDefinition[] = [
     gradient: 'linear-gradient(135deg, #343a40 0%, #495057 100%)',
     previewColors: ['#f1f3f5', '#e9ecef', '#dee2e6'],
   },
-  {
-    name: 'Dark',
-    mode: 'dark',
-    bg: '#0a0a0f',
-    surface: '#111118',
-    surface2: '#1a1a28',
-    border: 'rgba(139,92,246,0.18)',
-    text: '#f0f0ff',
-    text2: '#8884a8',
-    accent: '#8b5cf6',
-    gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-    previewColors: ['#1a1a28', '#2d2845', '#8b5cf6'],
-  },
-  {
-    name: 'Midnight',
-    mode: 'dark',
-    bg: '#050814',
-    surface: '#0d1117',
-    surface2: '#161b22',
-    border: 'rgba(6,182,212,0.15)',
-    text: '#e2f8ff',
-    text2: '#7d8ea0',
-    accent: '#06b6d4',
-    gradient: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)',
-    previewColors: ['#161b22', '#0d2a35', '#06b6d4'],
-  },
 ]
 
 export type CardView = 'grouped' | 'tagged'
@@ -161,17 +161,11 @@ const ThemeContext = createContext<ThemeContextType>({ theme: THEMES[0], setThem
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<ThemeDefinition>(() => {
     const stored = localStorage.getItem('prompty-theme')
-    // New installs default to Default
     if (!stored) return THEMES[0]
-    // Migration: old values were 'light' or 'dark'
     if (stored === 'light') return THEMES.find(t => t.name === 'Default') || THEMES[0]
     if (stored === 'dark') return THEMES.find(t => t.name === 'Dark') || THEMES[0]
-    // Migration: old name 'Monochrome' → 'Mono'
-    if (stored === 'Monochrome') return THEMES.find(t => t.name === 'Mono') || THEMES[0]
-    // Migration: old name 'Earth' → 'Mono' fallback
-    if (stored === 'Earth') return THEMES.find(t => t.name === 'Mono') || THEMES[0]
-    const found = THEMES.find(t => t.name === stored)
-    return found || THEMES[0]
+    if (stored === 'Monochrome' || stored === 'Earth') return THEMES.find(t => t.name === 'Mono') || THEMES[0]
+    return THEMES.find(t => t.name === stored) || THEMES[0]
   })
 
   const [cardView, setCardViewState] = useState<CardView>(() => {
@@ -196,6 +190,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--theme-text', theme.text)
     root.style.setProperty('--theme-text2', theme.text2)
     root.style.setProperty('--theme-accent', theme.accent)
+    root.style.setProperty('--theme-gradient', theme.gradient)
+    root.style.setProperty('--brand-gradient', theme.gradient)
   }, [theme])
 
   const setThemeByName = (name: string) => {

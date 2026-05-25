@@ -1,17 +1,17 @@
-<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="prompty">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0%" stop-color="#a78bfa"/>
-      <stop offset="100%" stop-color="#4f46e5"/>
-    </linearGradient>
-    <linearGradient id="sh" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0%" stop-color="white" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    <linearGradient id="bg-prompty" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6"></stop>
+      <stop offset="100%" stop-color="#6d28d9"></stop>
     </linearGradient>
   </defs>
-  <rect width="36" height="36" rx="10" fill="url(#bg)"/>
-  <rect width="36" height="20" rx="10" fill="url(#sh)"/>
-  <line x1="9" y1="13" x2="27" y2="13" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
-  <line x1="9" y1="18" x2="22" y2="18" stroke="white" stroke-width="2.2" stroke-linecap="round" opacity="0.8"/>
-  <line x1="9" y1="23" x2="18" y2="23" stroke="white" stroke-width="2.2" stroke-linecap="round" opacity="0.55"/>
+  <rect width="64" height="64" rx="14.4" fill="url(#bg-prompty)"></rect>
+  <g color="#ffffff" transform="translate(6.399999999999999 6.399999999999999) scale(0.8)">
+    <g fill="currentColor" stroke="none">
+    <rect x="12" y="16" width="40" height="5" rx="2.5"></rect>
+    <rect x="12" y="25" width="32" height="5" rx="2.5"></rect>
+    <rect x="12" y="34" width="36" height="5" rx="2.5"></rect>
+    <rect x="12" y="43" width="22" height="5" rx="2.5"></rect>
+  </g>
+  </g>
 </svg>

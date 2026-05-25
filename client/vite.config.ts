@@ -10,6 +10,9 @@ export default defineConfig({
     port: 3060,
     proxy: {
       '/api': 'http://localhost:3061',
+      // Uploaded images are served by the API server, not by Vite. Without
+      // this proxy, prompt images return 404 in dev.
+      '/images': 'http://localhost:3061',
     },
   },
   resolve: {

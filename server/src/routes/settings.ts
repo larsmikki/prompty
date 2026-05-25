@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDb, saveDb } from '../db/connection.js';
+import { DEFAULT_REFINE_CONTEXT } from '../refineDefault.js';
 
 const router = Router();
 
@@ -62,8 +63,9 @@ router.post('/test', async (req, res) => {
 });
 
 router.get('/refine-context', (_req, res) => {
-  const context = getSetting('refine_context');
-  res.json({ context, isDefault: !context });
+  const stored = getSetting('refine_context');
+  const isDefault = !stored;
+  res.json({ context: stored || DEFAULT_REFINE_CONTEXT, isDefault });
 });
 
 router.put('/refine-context', (req, res) => {

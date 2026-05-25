@@ -1,4 +1,34 @@
 node_modules
+**/node_modules
 dist
+**/dist
 .git
+.gitignore
+.dockerignore
 *.md
+LICENSE
+
+# Editor / IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test files (not needed in production image)
+**/tests
+**/*.test.ts
+**/*.test.tsx
+
+# Local runtime data
+data
+*.db
+*.db.tmp
+
+# Tooling
+.claude
+.gstack
+.eslintcache
+
+# OS
+.DS_Store
+Thumbs.db

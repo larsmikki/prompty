@@ -19,5 +19,13 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Legitimate uses (e.g. URL.createObjectURL with revoke on cleanup) trip
+      // this rule. Keep as a warning so it still surfaces but doesn't fail CI.
+      'react-hooks/set-state-in-effect': 'warn',
+      // Co-locating a context Provider with its consumer hook works fine; the
+      // only cost is HMR state preservation on edit. Warning is enough.
+      'react-refresh/only-export-components': 'warn',
+    },
   },
 ])

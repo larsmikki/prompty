@@ -25,7 +25,9 @@ COPY --from=builder /app/server/dist server/dist
 COPY --from=builder /app/server/src/db/migrations server/dist/db/migrations
 COPY --from=builder /app/client/dist client/dist
 
-RUN mkdir -p /app/data
+RUN apk add --no-cache su-exec \
+  && mkdir -p /app/data \
+  && chown -R node:node /app
 
 ENV NODE_ENV=production
 ENV PORT=3060
@@ -33,7 +35,7 @@ ENV DATA_DIR=/app/data
 
 EXPOSE 3060
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=5m --timeout=5s --start-period=10s --retries=3 \
   CMD wget --spider -q http://localhost:3060/api/health || exit 1
 
-CMD ["node", "server/dist/index.js"]
+ENTRYPOINT ["/bin/sh", "-c", "chown -R node:node /app/data && exec su-exec node node server/dist/index.js"]

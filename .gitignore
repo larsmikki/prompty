@@ -32,3 +32,11 @@ dist-ssr
 # Database / runtime data
 data/
 .gstack/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# TypeScript incremental build cache
+*.tsbuildinfo

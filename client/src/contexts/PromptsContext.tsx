@@ -6,12 +6,12 @@ interface PromptsContextType {
   prompts: Prompt[]
   categories: Category[]
   loading: boolean
-  addPrompt: (title: string, text: string, category: string) => Promise<Prompt | undefined>
-  deletePrompt: (id: string) => void
+  addPrompt: (title: string, text: string, category: string) => Promise<Prompt>
+  deletePrompt: (id: string) => Promise<void>
   editPrompt: (id: string, title: string, text: string, category: string) => void
-  addCategory: (name: string) => Promise<Category | undefined>
-  deleteCategory: (id: string) => void
-  renameCategory: (id: string, name: string) => void
+  addCategory: (name: string) => Promise<Category>
+  deleteCategory: (id: string) => Promise<void>
+  renameCategory: (id: string, name: string) => Promise<void>
   setPromptImage: (id: string, file: File) => Promise<void>
   removePromptImage: (id: string) => Promise<void>
   refresh: () => Promise<void>
@@ -52,84 +52,56 @@ export function PromptsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  const addPrompt = useCallback(async (title: string, text: string, category: string): Promise<Prompt | undefined> => {
-    try {
-      const newPrompt = await api.createPrompt({ title, text, category })
-      setPrompts(prev => [newPrompt, ...prev])
-      return newPrompt
-    } catch (err) {
-      console.error('Failed to add prompt:', err)
-      return undefined
-    }
+  const addPrompt = useCallback(async (title: string, text: string, category: string): Promise<Prompt> => {
+    const newPrompt = await api.createPrompt({ title, text, category })
+    setPrompts(prev => [newPrompt, ...prev])
+    return newPrompt
   }, [])
 
   const deletePrompt = useCallback(async (id: string) => {
-    try {
-      await api.deletePrompt(id)
-      setPrompts(prev => prev.filter(p => p.id !== id))
-    } catch (err) {
-      console.error('Failed to delete prompt:', err)
-    }
+    await api.deletePrompt(id)
+    setPrompts(prev => prev.filter(p => p.id !== id))
   }, [])
 
   const editPrompt = useCallback(async (id: string, title: string, text: string, category: string) => {
-    try {
-      await api.updatePrompt(id, { title, text, category })
-      setPrompts(prev => prev.map(p => p.id === id ? { ...p, title, text, category } : p))
-    } catch (err) {
-      console.error('Failed to edit prompt:', err)
-    }
+    await api.updatePrompt(id, { title, text, category })
+    setPrompts(prev => prev.map(p => p.id === id ? { ...p, title, text, category } : p))
   }, [])
 
-  const addCategory = useCallback(async (name: string): Promise<Category | undefined> => {
-    try {
-      const newCat = await api.createCategory(name)
-      setCategories(prev => [...prev, newCat].sort((a, b) => a.name.localeCompare(b.name)))
-      return newCat
-    } catch (err) {
-      console.error('Failed to add category:', err)
-      return undefined
-    }
+  const addCategory = useCallback(async (name: string): Promise<Category> => {
+    const newCat = await api.createCategory(name)
+    setCategories(prev => [...prev, newCat].sort((a, b) => a.name.localeCompare(b.name)))
+    return newCat
   }, [])
 
   const deleteCategory = useCallback(async (id: string) => {
-    try {
-      await api.deleteCategory(id)
-      setCategories(prev => prev.filter(c => c.id !== id))
-      // Refresh prompts since they may have been reassigned
-      const p = await api.getPrompts()
-      setPrompts(p)
-    } catch (err) {
-      console.error('Failed to delete category:', err)
-    }
+    await api.deleteCategory(id)
+    setCategories(prev => prev.filter(c => c.id !== id))
+    // Refresh prompts since they may have been reassigned
+    const p = await api.getPrompts()
+    setPrompts(p)
   }, [])
 
   const renameCategory = useCallback(async (id: string, name: string) => {
-    try {
-      await api.updateCategory(id, name)
-      setCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c))
-    } catch (err) {
-      console.error('Failed to rename category:', err)
+    const oldName = categories.find(c => c.id === id)?.name
+    await api.updateCategory(id, name)
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c))
+    // Server cascades the rename to prompts.category — mirror that locally
+    // so the UI doesn't show stale category labels until the next refresh.
+    if (oldName && oldName !== name) {
+      setPrompts(prev => prev.map(p => p.category === oldName ? { ...p, category: name } : p))
     }
-  }, [])
+  }, [categories])
 
   const setPromptImage = useCallback(async (id: string, file: File) => {
-    try {
-      const buffer = await file.arrayBuffer()
-      await api.uploadImage(id, buffer)
-      setPrompts(prev => prev.map(p => p.id === id ? { ...p, imagePath: `/images/${id}.png` } : p))
-    } catch (err) {
-      console.error('Failed to upload image:', err)
-    }
+    const buffer = await file.arrayBuffer()
+    await api.uploadImage(id, buffer)
+    setPrompts(prev => prev.map(p => p.id === id ? { ...p, imagePath: `/images/${id}.png?t=${Date.now()}` } : p))
   }, [])
 
   const removePromptImage = useCallback(async (id: string) => {
-    try {
-      await api.deleteImage(id)
-      setPrompts(prev => prev.map(p => p.id === id ? { ...p, imagePath: undefined } : p))
-    } catch (err) {
-      console.error('Failed to remove image:', err)
-    }
+    await api.deleteImage(id)
+    setPrompts(prev => prev.map(p => p.id === id ? { ...p, imagePath: undefined } : p))
   }, [])
 
   return (

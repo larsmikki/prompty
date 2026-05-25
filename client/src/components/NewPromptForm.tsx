@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePrompts } from '@/contexts/PromptsContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { Button, ConfirmDialog, Input, Modal, Select, Textarea, useToast } from '@/components/ui'
 
 export default function NewPromptForm({ onClose }: { onClose: () => void }) {
   const { categories, addPrompt, addCategory, setPromptImage } = usePrompts()
   const { theme } = useTheme()
+  const { addToast } = useToast()
   const [title, setTitle] = useState('')
   const [text, setText] = useState('')
   const [category, setCategory] = useState(categories[0]?.name || 'General')
@@ -13,6 +15,9 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
   const [newCatError, setNewCatError] = useState('')
   const [pendingImage, setPendingImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState('')
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [createdPromptId, setCreatedPromptId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -22,9 +27,32 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
     return () => URL.revokeObjectURL(url)
   }, [pendingImage])
 
+  const hasUnsavedContent = () => Boolean(title.trim() || text.trim() || pendingImage)
+
+  const requestClose = () => {
+    if (hasUnsavedContent()) {
+      setConfirmDiscard(true)
+      return
+    }
+    onClose()
+  }
+
+  // Server caps image payloads at 10 MB (express.raw limit). Reject earlier.
+  const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+
+  const acceptImage = (file: File): boolean => {
+    if (file.size > MAX_IMAGE_BYTES) {
+      setSubmitError(`Image is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 10 MB.`)
+      return false
+    }
+    setSubmitError('')
+    setPendingImage(file)
+    return true
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) setPendingImage(file)
+    if (file) acceptImage(file)
   }
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -32,7 +60,7 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
     if (!imageItem) return
     e.preventDefault()
     const file = imageItem.getAsFile()
-    if (file) setPendingImage(file)
+    if (file) acceptImage(file)
   }
 
   const handleRemoveImage = () => {
@@ -43,144 +71,96 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim() || !text.trim()) return
-    const newPrompt = await addPrompt(title.trim(), text.trim(), category)
-    if (newPrompt && pendingImage) {
-      await setPromptImage(newPrompt.id, pendingImage)
+    setSubmitError('')
+    try {
+      let promptId = createdPromptId
+      if (!promptId) {
+        const newPrompt = await addPrompt(title.trim(), text.trim(), category)
+        promptId = newPrompt.id
+        setCreatedPromptId(promptId)
+      }
+      if (pendingImage) {
+        await setPromptImage(promptId, pendingImage)
+      }
+      addToast('Prompt saved', 'success')
+      onClose()
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to save prompt')
     }
-    onClose()
   }
 
   const handleCreateCategory = async () => {
     if (!newCatName.trim()) return
     setNewCatError('')
-    const newCat = await addCategory(newCatName.trim())
-    if (newCat) {
+    try {
+      const newCat = await addCategory(newCatName.trim())
       setCategory(newCat.name)
       setNewCatName('')
       setCreatingCat(false)
-    } else {
-      setNewCatError('Failed to create category')
+    } catch (err) {
+      setNewCatError(err instanceof Error ? err.message : 'Failed to create category')
     }
   }
 
-  const inputStyle = {
-    background: theme.surface2,
-    border: `1px solid ${theme.border}`,
-    color: theme.text,
-    borderRadius: '10px',
-    transition: 'border-color 0.15s',
-  }
-
-  const focusStyle = `focus:ring-2 focus:ring-[${theme.accent}]`
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.72)' }}
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        style={{
-          background: theme.surface,
-          border: `1px solid ${theme.border}`,
-          boxShadow: `0 24px 64px rgba(0,0,0,0.4), 0 0 0 1px ${theme.border}`,
-        }}
-        onClick={e => e.stopPropagation()}
-        onPaste={handlePaste}
-      >
-        {/* Header */}
-        <div
-          className="flex items-center justify-between px-6 py-5 shrink-0"
-          style={{ borderBottom: `1px solid ${theme.border}` }}
-        >
-          <h2 className="text-lg font-bold gradient-text">New Prompt</h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg transition-colors hover:opacity-80"
-            style={{ color: theme.text2, background: theme.surface2 }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
-          {/* Title */}
+    <>
+      <ConfirmDialog
+        open={confirmDiscard}
+        title="Discard this prompt?"
+        message="Your changes will be lost."
+        confirmLabel="Discard"
+        destructive
+        onConfirm={onClose}
+        onClose={() => setConfirmDiscard(false)}
+      />
+      <Modal open onClose={requestClose} title="New prompt" maxWidth="560px">
+        <form onSubmit={handleSubmit} className="space-y-5" onPaste={handlePaste}>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: theme.text2 }}>
-              Title
-            </label>
-            <input
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-text2">Title</label>
+            <Input
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="Give your prompt a name..."
               autoFocus
-              className={`w-full px-4 py-3 text-sm outline-none ${focusStyle} placeholder:opacity-40`}
-              style={inputStyle}
             />
           </div>
 
-          {/* Category */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: theme.text2 }}>
-              Category
-            </label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-text2">Category</label>
             {creatingCat ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <input
+                  <Input
                     value={newCatName}
                     onChange={e => { setNewCatName(e.target.value); setNewCatError('') }}
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleCreateCategory())}
                     placeholder="New category name..."
                     autoFocus
-                    className="flex-1 px-4 py-3 text-sm outline-none placeholder:opacity-40"
-                    style={{
-                      ...inputStyle,
-                      border: `1px solid ${newCatError ? '#ef4444' : theme.border}`,
-                    }}
+                    invalid={!!newCatError}
                   />
-                  <button
-                    type="button"
-                    disabled={!newCatName.trim()}
-                    onClick={handleCreateCategory}
-                    className="px-4 py-3 text-sm font-semibold rounded-xl text-white disabled:opacity-40 transition-opacity shrink-0"
-                    style={{ background: theme.gradient }}
-                  >
+                  <Button type="button" variant="primary" disabled={!newCatName.trim()} onClick={handleCreateCategory}>
                     Create
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setCreatingCat(false); setNewCatName(''); setNewCatError('') }}
-                    className="px-4 py-3 text-sm rounded-xl transition-colors shrink-0"
-                    style={{ background: theme.surface2, color: theme.text2 }}
-                  >
+                  </Button>
+                  <Button type="button" onClick={() => { setCreatingCat(false); setNewCatName(''); setNewCatError('') }}>
                     Cancel
-                  </button>
+                  </Button>
                 </div>
-                {newCatError && <p className="text-xs text-red-500">{newCatError}</p>}
+                {newCatError && <p className="text-xs" style={{ color: '#dc2626' }}>{newCatError}</p>}
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <select
-                  value={category}
-                  onChange={e => setCategory(e.target.value)}
-                  className="flex-1 px-4 py-3 text-sm outline-none"
-                  style={inputStyle}
-                >
+                <Select value={category} onChange={e => setCategory(e.target.value)}>
                   {categories.map(c => (
                     <option key={c.id} value={c.name}>{c.name}</option>
                   ))}
-                </select>
+                </Select>
                 <button
                   type="button"
                   onClick={() => setCreatingCat(true)}
-                  className="p-3 rounded-xl transition-colors shrink-0 hover:opacity-80"
+                  className="p-2.5 rounded-lg shrink-0 hover:opacity-80 transition-opacity"
                   style={{ background: theme.surface2, color: theme.text2 }}
                   title="Create new category"
+                  aria-label="Create new category"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -190,24 +170,19 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
             )}
           </div>
 
-          {/* Prompt text */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: theme.text2 }}>
-              Prompt
-            </label>
-            <textarea
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-text2">Prompt</label>
+            <Textarea
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder="Paste or type your prompt here..."
               rows={6}
-              className="w-full p-4 text-sm resize-y outline-none placeholder:opacity-40"
-              style={inputStyle}
+              className="resize-y"
             />
           </div>
 
-          {/* Image attachment */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: theme.text2 }}>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-text2">
               Image <span className="normal-case font-normal opacity-60">(optional)</span>
             </label>
             {imagePreview ? (
@@ -221,9 +196,9 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
                 <button
                   type="button"
                   onClick={handleRemoveImage}
+                  aria-label="Remove image"
                   className="absolute top-1.5 right-1.5 p-1 rounded-full"
                   style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}
-                  title="Remove image"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -232,7 +207,7 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
               </div>
             ) : (
               <label
-                className="flex items-center gap-2.5 px-4 py-3 text-sm rounded-xl cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2.5 px-4 py-3 text-sm rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                 style={{ background: theme.surface2, color: theme.text2, border: `1px dashed ${theme.border}` }}
               >
                 <input
@@ -250,27 +225,16 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium rounded-xl transition-colors"
-              style={{ background: theme.surface2, color: theme.text2 }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!title.trim() || !text.trim()}
-              className="px-5 py-2.5 text-sm font-semibold rounded-xl text-white disabled:opacity-40 transition-opacity hover:opacity-90"
-              style={{ background: theme.gradient }}
-            >
-              Save Prompt
-            </button>
+          {submitError && <p className="text-xs" style={{ color: '#dc2626' }}>{submitError}</p>}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" onClick={requestClose}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={!title.trim() || !text.trim()}>
+              Save prompt
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </Modal>
+    </>
   )
 }

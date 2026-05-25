@@ -1,26 +1,26 @@
 // @ts-ignore
 import initSqlJs from 'sql.js'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const migrationsDir = path.join(__dirname, '..', 'src', 'db', 'migrations')
 
 export async function createTestDb() {
   const SQL = await initSqlJs()
   const db = new SQL.Database()
 
-  db.run(`CREATE TABLE IF NOT EXISTS categories (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL
-  )`)
-
-  db.run(`CREATE TABLE IF NOT EXISTS prompts (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL DEFAULT '',
-    text TEXT NOT NULL,
-    category TEXT NOT NULL,
-    created_at INTEGER NOT NULL,
-    image_path TEXT
-  )`)
-
-  // Seed default category (matches the initial migration)
-  db.run(`INSERT INTO categories (id, name) VALUES ('general', 'General')`)
+  // Run the same migrations as production so the test schema can't silently
+  // drift. Avoids the trap of "feature works in tests but fails in prod"
+  // (e.g. a new column the test helper forgot about).
+  const files = fs.readdirSync(migrationsDir)
+    .filter(f => f.endsWith('.sql'))
+    .sort()
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8')
+    db.run(sql)
+  }
 
   return db
 }

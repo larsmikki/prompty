@@ -11,12 +11,31 @@
     <meta name="apple-mobile-web-app-title" content="Prompty" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Prompty</title>
-    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="theme-color" content="#7c3aed" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('prompty-theme');
+          var bg = {
+            'Default': '#f0f2f5', 'Rainbow': '#f5f0ff', 'Ocean': '#f0f9ff',
+            'Forest': '#f0fdf4', 'Sunset': '#fffbf0', 'Lavender': '#faf5ff',
+            'Nord': '#eceff4', 'Mono': '#f8f9fa',
+            'Dark': '#0a0a0f', 'Midnight': '#050814',
+            'light': '#f0f2f5', 'dark': '#0a0a0f',
+            'Monochrome': '#f8f9fa', 'Earth': '#f8f9fa'
+          }[stored] || '#f0f2f5';
+          var isDark = stored === 'Dark' || stored === 'Midnight' || stored === 'dark';
+          document.documentElement.style.backgroundColor = bg;
+          document.body.style.backgroundColor = bg;
+          if (isDark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

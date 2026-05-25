@@ -26,10 +26,10 @@ const samplePayload = {
 }
 
 describe('POST /api/import', () => {
-  it('returns { ok: true }', async () => {
+  it('returns counts of added/skipped entries', async () => {
     const res = await request(app).post('/api/import').send(samplePayload)
     expect(res.status).toBe(200)
-    expect(res.body).toEqual({ ok: true })
+    expect(res.body).toMatchObject({ ok: true, categoriesAdded: 1, promptsAdded: 1, categoriesSkipped: 0, promptsSkipped: 0 })
   })
 
   it('imports categories and prompts', async () => {
@@ -54,7 +54,24 @@ describe('POST /api/import', () => {
   it('handles empty payload gracefully', async () => {
     const res = await request(app).post('/api/import').send({})
     expect(res.status).toBe(200)
-    expect(res.body).toEqual({ ok: true })
+    expect(res.body).toMatchObject({ ok: true, promptsAdded: 0, categoriesAdded: 0 })
+  })
+
+  it('skips malformed prompts instead of crashing the import', async () => {
+    const res = await request(app).post('/api/import').send({
+      prompts: [
+        { id: 'good', title: 'Good', text: 'has text', category: 'General', createdAt: 1 },
+        { id: 'bad', title: 'Missing text', category: 'General' }, // no text → would violate NOT NULL
+        { id: 'also-bad' }, // no text or category
+      ],
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.promptsAdded).toBe(1)
+    expect(res.body.promptsSkipped).toBe(2)
+
+    const { body: prompts } = await request(app).get('/api/prompts')
+    expect(prompts.some((p: any) => p.id === 'good')).toBe(true)
+    expect(prompts.some((p: any) => p.id === 'bad')).toBe(false)
   })
 
   it('imports only prompts when categories is omitted', async () => {
@@ -66,5 +83,31 @@ describe('POST /api/import', () => {
 
     const { body: prompts } = await request(app).get('/api/prompts')
     expect(prompts.some((p: any) => p.id === 'p-2')).toBe(true)
+  })
+
+  it('preserves image_path on round-trip and strips cache-busting query strings', async () => {
+    await request(app).post('/api/import').send({
+      prompts: [
+        { id: 'p-img', title: 'With image', text: 'x', category: 'General', createdAt: 1, imagePath: '/images/p-img.png?t=12345' },
+      ],
+    })
+
+    const { body: prompts } = await request(app).get('/api/prompts')
+    const got = prompts.find((p: any) => p.id === 'p-img')
+    expect(got).toBeTruthy()
+    expect(got.imagePath).toBe('/images/p-img.png')
+  })
+
+  it('drops imagePath when filename contains unsafe characters (path traversal defense)', async () => {
+    await request(app).post('/api/import').send({
+      prompts: [
+        { id: 'p-evil', title: 'Evil', text: 'x', category: 'General', createdAt: 1, imagePath: '/images/../../etc/passwd' },
+      ],
+    })
+
+    const { body: prompts } = await request(app).get('/api/prompts')
+    const got = prompts.find((p: any) => p.id === 'p-evil')
+    expect(got).toBeTruthy()
+    expect(got.imagePath).toBeUndefined()
   })
 })

@@ -50,13 +50,24 @@ describe('POST /api/prompts', () => {
     expect(res.body.createdAt).toBeTruthy()
   })
 
-  it('accepts a custom id', async () => {
+  it('accepts a client-supplied UUID', async () => {
+    const uuid = '550e8400-e29b-41d4-a716-446655440000'
     const res = await request(app)
       .post('/api/prompts')
-      .send({ id: 'custom-id', title: 'T', text: 'body', category: 'General' })
+      .send({ id: uuid, title: 'T', text: 'body', category: 'General' })
 
     expect(res.status).toBe(201)
-    expect(res.body.id).toBe('custom-id')
+    expect(res.body.id).toBe(uuid)
+  })
+
+  it('replaces a non-UUID id with a generated UUID (blocks path traversal)', async () => {
+    const res = await request(app)
+      .post('/api/prompts')
+      .send({ id: '../../etc/passwd', title: 'T', text: 'body', category: 'General' })
+
+    expect(res.status).toBe(201)
+    expect(res.body.id).not.toBe('../../etc/passwd')
+    expect(res.body.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   })
 
   it('defaults title to empty string when omitted', async () => {
@@ -74,6 +85,18 @@ describe('POST /api/prompts', () => {
     const res = await request(app).get('/api/prompts')
     expect(res.body).toHaveLength(1)
     expect(res.body[0].title).toBe('Persisted')
+  })
+
+  it('returns 400 when text is missing', async () => {
+    const res = await request(app).post('/api/prompts').send({ title: 'T', category: 'General' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/text/i)
+  })
+
+  it('returns 400 when category is missing', async () => {
+    const res = await request(app).post('/api/prompts').send({ title: 'T', text: 'x' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/category/i)
   })
 })
 
@@ -93,6 +116,23 @@ describe('PUT /api/prompts/:id', () => {
     expect(res.body).toMatchObject({ id, title: 'New', text: 'new text', category: 'General' })
   })
 
+  it('returns 404 when updating a non-existent prompt', async () => {
+    const res = await request(app)
+      .put('/api/prompts/does-not-exist')
+      .send({ title: 'T', text: 'x', category: 'General' })
+    expect(res.status).toBe(404)
+  })
+
+  it('returns 400 when update payload is missing text', async () => {
+    const { body: created } = await request(app)
+      .post('/api/prompts')
+      .send({ title: 'T', text: 'old', category: 'General' })
+    const res = await request(app)
+      .put(`/api/prompts/${created.id}`)
+      .send({ title: 'T', category: 'General' })
+    expect(res.status).toBe(400)
+  })
+
   it('update is reflected in GET', async () => {
     const { body: created } = await request(app)
       .post('/api/prompts')
@@ -104,6 +144,27 @@ describe('PUT /api/prompts/:id', () => {
 
     const { body: prompts } = await request(app).get('/api/prompts')
     expect(prompts[0].title).toBe('After')
+  })
+})
+
+describe('POST /api/prompts/:id/image', () => {
+  it('rejects a non-UUID id with 400 (path traversal defense)', async () => {
+    const res = await request(app)
+      .post('/api/prompts/..%2F..%2Fevil/image')
+      .set('Content-Type', 'application/octet-stream')
+      .send(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/invalid/i)
+  })
+
+  it('returns 404 when the prompt does not exist (valid UUID, no row)', async () => {
+    const res = await request(app)
+      .post('/api/prompts/550e8400-e29b-41d4-a716-446655440000/image')
+      .set('Content-Type', 'application/octet-stream')
+      .send(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+
+    expect(res.status).toBe(404)
   })
 })
 
