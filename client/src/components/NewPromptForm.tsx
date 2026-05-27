@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { usePrompts } from '@/contexts/PromptsContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button, ConfirmDialog, Input, Modal, Select, Textarea, useToast } from '@/components/ui'
@@ -14,18 +14,21 @@ export default function NewPromptForm({ onClose }: { onClose: () => void }) {
   const [newCatName, setNewCatName] = useState('')
   const [newCatError, setNewCatError] = useState('')
   const [pendingImage, setPendingImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState('')
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [createdPromptId, setCreatedPromptId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const imagePreview = useMemo(
+    () => pendingImage ? URL.createObjectURL(pendingImage) : null,
+    [pendingImage],
+  )
+
   useEffect(() => {
-    if (!pendingImage) { setImagePreview(null); return }
-    const url = URL.createObjectURL(pendingImage)
-    setImagePreview(url)
-    return () => URL.revokeObjectURL(url)
-  }, [pendingImage])
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview)
+    }
+  }, [imagePreview])
 
   const hasUnsavedContent = () => Boolean(title.trim() || text.trim() || pendingImage)
 

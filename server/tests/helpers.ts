@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-expect-error sql.js has no bundled types
 import initSqlJs from 'sql.js'
 import fs from 'fs'
 import path from 'path'

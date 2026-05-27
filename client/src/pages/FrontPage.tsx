@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { usePrompts } from '@/contexts/PromptsContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button, ConfirmDialog, Input, Pill, useToast } from '@/components/ui'
@@ -39,31 +39,29 @@ export default function FrontPage() {
   const [editCatName, setEditCatName] = useState('')
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (activeCategory && !categories.some(c => c.name === activeCategory)) {
-      setActiveCategory(null)
-    }
-  }, [categories, activeCategory])
+  const visibleActiveCategory = activeCategory && categories.some(c => c.name === activeCategory)
+    ? activeCategory
+    : null
 
   const filtered = useMemo(() => {
     let result = prompts
-    if (activeCategory) result = result.filter(p => p.category === activeCategory)
+    if (visibleActiveCategory) result = result.filter(p => p.category === visibleActiveCategory)
     const q = search.trim().toLowerCase()
     if (q) {
       result = result.filter(p => p.title.toLowerCase().includes(q) || p.text.toLowerCase().includes(q))
     }
     return result
-  }, [prompts, activeCategory, search])
+  }, [prompts, visibleActiveCategory, search])
 
   const grouped = useMemo(() => {
-    if (cardView !== 'grouped' || activeCategory || search.trim()) return null
+    if (cardView !== 'grouped' || visibleActiveCategory || search.trim()) return null
     const groups: Record<string, typeof prompts> = {}
     for (const p of filtered) {
       if (!groups[p.category]) groups[p.category] = []
       groups[p.category].push(p)
     }
     return groups
-  }, [filtered, cardView, activeCategory, search])
+  }, [filtered, cardView, visibleActiveCategory, search])
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -154,12 +152,12 @@ export default function FrontPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Pill active={activeCategory === null} onClick={() => setActiveCategory(null)}>All</Pill>
+          <Pill active={visibleActiveCategory === null} onClick={() => setActiveCategory(null)}>All</Pill>
           {categories.map(c => (
             <Pill
               key={c.id}
-              active={activeCategory === c.name}
-              onClick={() => setActiveCategory(c.name === activeCategory ? null : c.name)}
+              active={visibleActiveCategory === c.name}
+              onClick={() => setActiveCategory(c.name === visibleActiveCategory ? null : c.name)}
             >
               {c.name}
             </Pill>

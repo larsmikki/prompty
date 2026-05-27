@@ -5,7 +5,7 @@ const state = vi.hoisted(() => ({ shouldThrow: false }))
 
 vi.mock('../src/db/connection.js', () => ({
   getDb: () => ({
-    exec: (sql: string) => {
+    exec: (_sql: string) => {
       if (state.shouldThrow) throw new Error('db is gone')
       return [{ columns: ['1'], values: [[1]] }]
     },

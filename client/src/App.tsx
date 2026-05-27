@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { ThemeProvider } from '@/contexts/ThemeContext'
-import { PromptsProvider } from '@/contexts/PromptsContext'
+import { ThemeProvider } from '@/contexts/ThemeProvider'
+import { PromptsProvider } from '@/contexts/PromptsProvider'
 import { ToastProvider } from '@/components/ui'
 import Layout from '@/components/Layout'
 import FrontPage from '@/pages/FrontPage'

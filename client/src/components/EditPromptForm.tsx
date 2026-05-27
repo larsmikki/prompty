@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import type { Prompt } from '@/types'
 import { usePrompts } from '@/contexts/PromptsContext'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -18,18 +18,22 @@ export default function EditPromptForm({ prompt, onClose }: { prompt: Prompt; on
   const [refining, setRefining] = useState(false)
   const [refineError, setRefineError] = useState('')
   const [pendingImage, setPendingImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(prompt.imagePath || null)
   const [removeExistingImage, setRemoveExistingImage] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const pendingImagePreview = useMemo(
+    () => pendingImage ? URL.createObjectURL(pendingImage) : null,
+    [pendingImage],
+  )
+  const imagePreview = pendingImagePreview ?? (removeExistingImage ? null : prompt.imagePath || null)
+
   useEffect(() => {
-    if (!pendingImage) return
-    const url = URL.createObjectURL(pendingImage)
-    setImagePreview(url)
-    return () => URL.revokeObjectURL(url)
-  }, [pendingImage])
+    return () => {
+      if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview)
+    }
+  }, [pendingImagePreview])
 
   const isDirty = () =>
     title !== prompt.title ||
@@ -75,7 +79,6 @@ export default function EditPromptForm({ prompt, onClose }: { prompt: Prompt; on
   const handleRemoveImage = () => {
     if (prompt.imagePath) setRemoveExistingImage(true)
     setPendingImage(null)
-    setImagePreview(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 

@@ -1,6 +1,6 @@
 # Prompty
 
-![Screenshot](resources/screenshot.png)
+![Screenshot](screenshot.png)
 
 A self-hosted prompt library for managing and organizing your AI prompts. Store, search, and discover prompts across categories — all synced server-side so your library is available everywhere.
 
