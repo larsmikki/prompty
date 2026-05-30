@@ -22,8 +22,25 @@ export default function PromptCard({ prompt }: { prompt: Prompt }) {
   }, [lightbox])
 
   const handleCopy = async () => {
+    const text = prompt.text
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1800)
+        return
+      } catch { /* fall through to execCommand */ }
+    }
     try {
-      await navigator.clipboard.writeText(prompt.text)
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.focus()
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
     } catch {
