@@ -14,12 +14,12 @@ async function fetchPromptData(): Promise<PromptData> {
   const [prompts, categories] = await Promise.all([api.getPrompts(), api.getCategories()])
 
   if (prompts.length === 0 && categories.length <= 1) {
-    const localPrompts = JSON.parse(localStorage.getItem('prompty-prompts') || '[]') as Prompt[]
-    const localCategories = JSON.parse(localStorage.getItem('prompty-categories') || '[]') as Category[]
+    const localPrompts = JSON.parse(localStorage.getItem('prompts') || '[]') as Prompt[]
+    const localCategories = JSON.parse(localStorage.getItem('categories') || '[]') as Category[]
     if (localPrompts.length > 0 || localCategories.length > 0) {
       await api.importData({ prompts: localPrompts, categories: localCategories })
-      localStorage.removeItem('prompty-prompts')
-      localStorage.removeItem('prompty-categories')
+      localStorage.removeItem('prompts')
+      localStorage.removeItem('categories')
       const [migratedPrompts, migratedCategories] = await Promise.all([api.getPrompts(), api.getCategories()])
       return { prompts: migratedPrompts, categories: migratedCategories }
     }

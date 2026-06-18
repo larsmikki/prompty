@@ -10,7 +10,7 @@ async function main() {
 
   const app = createApp();
   const server = app.listen(config.port, () => {
-    console.log(`Prompty server running on http://localhost:${config.port}`);
+    console.log(`Promptr server running on http://localhost:${config.port}`);
   });
 
   // Graceful shutdown: stop accepting new connections, finish in-flight

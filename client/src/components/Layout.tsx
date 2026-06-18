@@ -41,9 +41,9 @@ export default function Layout() {
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
-            <img src="/favicon.svg" width={28} height={28} alt="Prompty" className="shrink-0" />
+            <img src="/favicon.svg" width={28} height={28} alt="Promptr" className="shrink-0" />
             <span className="text-xl font-extrabold tracking-tight gradient-text select-none">
-              Prompty
+              Promptr
             </span>
           </Link>
 

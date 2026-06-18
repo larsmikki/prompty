@@ -1,11 +1,11 @@
 services:
-  prompty:
-    image: larsmikki/prompty:latest
-    container_name: prompty
+  promptr:
+    image: larsmikki/promptr:latest
+    container_name: promptr
     ports:
       - "3060:3060"
     volumes:
-      - prompty_data:/app/data
+      - promptr_data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3060/api/health"]
@@ -15,4 +15,4 @@ services:
       start_period: 10s
 
 volumes:
-  prompty_data:
+  promptr_data:

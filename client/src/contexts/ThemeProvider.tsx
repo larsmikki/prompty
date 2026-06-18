@@ -8,7 +8,7 @@ import {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<ThemeDefinition>(() => {
-    const stored = localStorage.getItem('prompty-theme')
+    const stored = localStorage.getItem('theme')
     if (!stored) return THEMES[0]
     if (stored === 'light') return THEMES.find(t => t.name === 'Default') || THEMES[0]
     if (stored === 'dark') return THEMES.find(t => t.name === 'Dark') || THEMES[0]
@@ -17,17 +17,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   })
 
   const [cardView, setCardViewState] = useState<CardView>(() => {
-    const stored = localStorage.getItem('prompty-card-view')
+    const stored = localStorage.getItem('card-view')
     return stored === 'tagged' ? 'tagged' : 'grouped'
   })
 
   const setCardView = (v: CardView) => {
     setCardViewState(v)
-    localStorage.setItem('prompty-card-view', v)
+    localStorage.setItem('card-view', v)
   }
 
   useEffect(() => {
-    localStorage.setItem('prompty-theme', theme.name)
+    localStorage.setItem('theme', theme.name)
     document.documentElement.classList.toggle('dark', theme.mode === 'dark')
 
     const root = document.documentElement
