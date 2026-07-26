@@ -1,6 +1,6 @@
 {
-  "name": "Promptr",
-  "short_name": "Promptr",
+  "name": "Prompty",
+  "short_name": "Prompty",
   "description": "Prompt management app",
   "start_url": "/",
   "display": "standalone",

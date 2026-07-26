@@ -1,4 +1,4 @@
-﻿# Promptr
+﻿# Prompty
 
 ![Screenshot](screenshot.png)
 
@@ -14,24 +14,24 @@ Works on Synology, Unraid, TrueNAS, QNAP, Proxmox, or a plain Docker host.
 
 ```bash
 docker run -d \
-  --name promptr \
+  --name prompty \
   -p 3060:3060 \
-  -v promptr_data:/app/data \
+  -v prompty_data:/app/data \
   --restart unless-stopped \
-  larsmikki/promptr:latest
+  larsmikki/prompty:latest
 ```
 
 Or with Compose:
 
 ```yaml
 services:
-  promptr:
-    image: larsmikki/promptr:latest
-    container_name: promptr
+  prompty:
+    image: larsmikki/prompty:latest
+    container_name: prompty
     ports:
       - "3060:3060"
     volumes:
-      - promptr_data:/app/data
+      - prompty_data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3060/api/health"]
@@ -41,7 +41,7 @@ services:
       start_period: 10s
 
 volumes:
-  promptr_data:
+  prompty_data:
 ```
 
 ### 2. Local install on Windows
@@ -49,8 +49,8 @@ volumes:
 Requires [Git for Windows](https://git-scm.com/download/win) and [Node.js 20+](https://nodejs.org/).
 
 ```powershell
-git clone https://github.com/larsmikki/promptr.git
-cd promptr
+git clone https://github.com/larsmikki/prompty.git
+cd prompty
 npm install
 npm run dev
 ```
@@ -61,8 +61,8 @@ For a production build: `npm run build && npm start`.
 
 ```bash
 brew install node git
-git clone https://github.com/larsmikki/promptr.git
-cd promptr
+git clone https://github.com/larsmikki/prompty.git
+cd prompty
 npm install
 npm run dev
 ```
@@ -77,8 +77,8 @@ Debian/Ubuntu:
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs git
 
-git clone https://github.com/larsmikki/promptr.git
-cd promptr
+git clone https://github.com/larsmikki/prompty.git
+cd prompty
 npm install
 npm run dev
 ```
@@ -107,9 +107,9 @@ In dev, the client runs on `:3060` and the API on `:3061`. For local dev, copy `
 - **Themes** â€” 10 built-in light and dark themes
 - **Persistent storage** â€” all data stored in SQLite via a Docker volume
 
-## Upgrading from Prompty
+## Upgrading from Promptr
 
-The database file was renamed from `prompty.db` to `data.db` and localStorage keys were neutralised. Existing data does **not** migrate automatically — back up your library via Settings → Export before upgrading, then re-import after the new version starts.
+The Docker volume is now named `prompty_data`. Existing Docker deployments can keep using the old `promptr_data` volume by mounting it at `/app/data`, or migrate its contents to the new volume before starting Prompty. Local installations keep their existing `data/` directory unchanged.
 
 ## Development scripts
 
@@ -117,6 +117,5 @@ The database file was renamed from `prompty.db` to `data.db` and localStorage ke
 npm test                  # run the server test suite (vitest)
 npm run lint -w client    # lint the client
 npm run build             # production build of client + server
-docker build -t promptr . # build a production image locally
+docker build -t prompty . # build a production image locally
 ```
-
